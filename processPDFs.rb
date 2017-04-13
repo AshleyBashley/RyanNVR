@@ -66,32 +66,35 @@ end
 ##This method generates an order object from an RYAN home PDF.
 
 def generateObjectFromOrder_RYAN(pdfName)
+	o={}
+	o[:communityType] = 'RyanHomes'
+	o[:fileName] = pdfName
 
-			o={}
-			o[:communityType] = 'RyanHomes'
-			o[:fileName] = pdfName
-
-			reader = PDF::Reader.new(pdfName)
+		reader = PDF::Reader.new(pdfName)
 
 		reader.pages.each{|x| #Iterate over each of the pages in the reader
 			x.text.split(/\n/).each{|y| #iterate over each line in the page
 
-			if y["KFK"] #If the current line contains "KFK"
+				if y["KFK"] #If the current line contains "KFK"
 				o[:KitchenSink] = "11444"
-			end
-			if y["KFL"] #If the current line contains "KFL"
+
+				end
+
+				if y["KFL"] #If the current line contains "KFL"
 				o[:KitchenSink] = "11600"
 			end
 
 
-			if y["FAUCET FIXTURES KITCHEN"]
+				if y["FAUCET FIXTURES KITCHEN"]
 				o[:FaucetSpread] = 'centered' #faucet standard
 			else
 				y["FAUCET FIXTURES KITCHEN UPGRADE"]
 				o[:FaucetSpread] = 'faucet centered, handle 4" to R, soap 4" to R of handle' #faucet upgrade
 			end
-
-	#Not yet implemented.
+			}
+		}
+	
+end	
 
 def main
 	#A place to collect all of the orders
@@ -113,6 +116,5 @@ def main
 
 	#awesome_print out all of the orders we just processed!
 	ap parsedOrders
-end
-
-main
+end	
+main		
