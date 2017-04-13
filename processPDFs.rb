@@ -32,6 +32,11 @@ def generateObjectFromOrder_NV(pdfName)
 				o[:orderDate] = Date.strptime(y[y.index("Start Dat")+9..-1], '%m/%d/%Y')
 			end
 
+			if y["SELECTION ACKNOWLEDGEMENT"]
+				o[:lotNumber] = y[y.rindex("-")+1..-1].strip.to_i
+				o[:community] = y[y.index("-")+1..y.rindex("-")-1]
+			end
+
 			if y["Set/"] && o[:houseTypeCode].nil?
 				o[:houseTypeCode] = y[y.rindex("(")+1..y.rindex("-")-1]
 			end
@@ -57,43 +62,38 @@ def generateObjectFromOrder_NV(pdfName)
 	}
 	return o
 end
-########################################################################
-########################################################################
-#######################  Don't touch below!  ###########################
-########################################################################
-########################################################################
 
 ##This method generates an order object from an RYAN home PDF.
-
 def generateObjectFromOrder_RYAN(pdfName)
 	o={}
 	o[:communityType] = 'RyanHomes'
 	o[:fileName] = pdfName
 
-		reader = PDF::Reader.new(pdfName)
+	reader = PDF::Reader.new(pdfName)
 
-		reader.pages.each{|x| #Iterate over each of the pages in the reader
-			x.text.split(/\n/).each{|y| #iterate over each line in the page
+	reader.pages.each{|x| #Iterate over each of the pages in the reader
+		x.text.split(/\n/).each{|y| #iterate over each line in the page
 
-				if y["KFK"] #If the current line contains "KFK"
+			if y["KFK"] #If the current line contains "KFK"
 				o[:KitchenSink] = "11444"
+			end
 
-				end
-
-				if y["KFL"] #If the current line contains "KFL"
+			if y["KFL"] #If the current line contains "KFL"
 				o[:KitchenSink] = "11600"
 			end
 
-
-				if y["FAUCET FIXTURES KITCHEN"]
-				o[:FaucetSpread] = 'centered' #faucet standard
-			else
-				y["FAUCET FIXTURES KITCHEN UPGRADE"]
-				o[:FaucetSpread] = 'faucet centered, handle 4" to R, soap 4" to R of handle' #faucet upgrade
+			if y["FAUCET FIXTURES KITCHEN"]
+				if y["UPGRADE"]
+					#Faucet Fixtures Kitchen AND Upgrade
+					o[:FaucetSpread] = 'faucet centered, handle 4" to R, soap 4" to R of handle' #faucet upgrade
+				else
+					#Faucet Fixtures Kitchen AND NOT Upgrade
+					o[:FaucetSpread] = 'centered' #faucet standard
+				end
 			end
-			}
 		}
-	
+	}
+	return o
 end	
 
 def main
@@ -111,7 +111,9 @@ def main
 	Dir.mkdir('PDFs_NV') if !File.directory?('PDFs_NV')
 	Dir['PDFs_NV/*.pdf'].each{|x|
 	# 	#Generate the parsed order from the PDF and push it onto parsedOrders array.
-	 	parsedOrders << generateObjectFromOrder_NV(x)
+		tmpOrder = generateObjectFromOrder_NV(x)
+	 	parsedOrders << tmpOrder
+	 	File.rename(x, "PDFs_NV/#{tmpOrder[:lotNumber]} #{tmpOrder[:community]} ws.pdf")
 	 }
 
 	#awesome_print out all of the orders we just processed!
