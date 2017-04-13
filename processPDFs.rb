@@ -8,7 +8,7 @@ require 'ap' #gem install awesome_print
 #######################  Don't touch above!  ###########################
 ########################################################################
 ########################################################################
-{
+
 ##This method generates an order object from a NV home PDF.
 def generateObjectFromOrder_NV(pdfName)
 	o={}
@@ -57,7 +57,6 @@ def generateObjectFromOrder_NV(pdfName)
 	}
 	return o
 end
-
 ########################################################################
 ########################################################################
 #######################  Don't touch below!  ###########################
@@ -65,21 +64,45 @@ end
 ########################################################################
 
 ##This method generates an order object from an RYAN home PDF.
+
 def generateObjectFromOrder_RYAN(pdfName)
+
+			o={}
+			o[:communityType] = 'RyanHomes'
+			o[:fileName] = pdfName
+
+			reader = PDF::Reader.new(pdfName)
+
+		reader.pages.each{|x| #Iterate over each of the pages in the reader
+			x.text.split(/\n/).each{|y| #iterate over each line in the page
+
+			if y["KFK"] #If the current line contains "KFK"
+				o[:KitchenSink] = "11444"
+			end
+			if y["KFL"] #If the current line contains "KFL"
+				o[:KitchenSink] = "11600"
+			end
+
+
+			if y["FAUCET FIXTURES KITCHEN"]
+				o[:FaucetSpread] = 'centered' #faucet standard
+			else
+				y["FAUCET FIXTURES KITCHEN UPGRADE"]
+				o[:FaucetSpread] = 'faucet centered, handle 4" to R, soap 4" to R of handle' #faucet upgrade
+			end
+
 	#Not yet implemented.
-	return {}
-end
 
 def main
 	#A place to collect all of the orders
 	parsedOrders = []
 
 	#Parse all RYAN pdfs
-	# Dir.mkdir('PDFs_RYAN') if !File.directory?('PDFs_RYAN')
-	# Dir['PDFs_RYAN/*.pdf'].each{|x|
-	# 	#Generate the parsed order from the PDF and push it onto parsedOrders array.
-	# 	parsedOrders << generateObjectFromOrder_RYAN(x)
-	# }
+	 Dir.mkdir('PDFs_RYAN') if !File.directory?('PDFs_RYAN')
+	 Dir['PDFs_RYAN/*.pdf'].each{|x|
+	 	#Generate the parsed order from the PDF and push it onto parsedOrders array.
+	 	parsedOrders << generateObjectFromOrder_RYAN(x)
+	 }
 
 	# Parse all NV pdfs
 	Dir.mkdir('PDFs_NV') if !File.directory?('PDFs_NV')
