@@ -32,11 +32,6 @@ def generateObjectFromOrder_NV(pdfName)
 				o[:orderDate] = Date.strptime(y[y.index("Start Dat")+9..-1], '%m/%d/%Y')
 			end
 
-			if y["SELECTION ACKNOWLEDGEMENT"]
-				o[:lotNumber] = y[y.rindex("-")+1..-1].strip.to_i
-				o[:community] = y[y.index("-")+1..y.rindex("-")-1]
-			end
-
 			if y["Set/"] && o[:houseTypeCode].nil?
 				o[:houseTypeCode] = y[y.rindex("(")+1..y.rindex("-")-1]
 			end
@@ -111,9 +106,7 @@ def main
 	Dir.mkdir('PDFs_NV') if !File.directory?('PDFs_NV')
 	Dir['PDFs_NV/*.pdf'].each{|x|
 	# 	#Generate the parsed order from the PDF and push it onto parsedOrders array.
-		tmpOrder = generateObjectFromOrder_NV(x)
-	 	parsedOrders << tmpOrder
-	 	File.rename(x, "PDFs_NV/#{tmpOrder[:lotNumber]} #{tmpOrder[:community]} ws.pdf")
+	 	parsedOrders << generateObjectFromOrder_NV(x)
 	 }
 
 	#awesome_print out all of the orders we just processed!
