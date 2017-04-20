@@ -35,6 +35,17 @@ def generateObjectFromOrder_NV(pdfName)
 			if y["Set/"] && o[:houseTypeCode].nil?
 				o[:houseTypeCode] = y[y.rindex("(")+1..y.rindex("-")-1]
 			end
+				if y["999QK00"]
+					o[:"ColorCode"] = y
+  					 #We’re definately in a color line
+
+    				if y["UPDATE"]
+    					o[:"UpdatedColor"] = y
+       				 #We’re on a color line *AND* it’s an update
+    			else
+         			#We’re on a color line *AND* it’s *NOT* an update
+    			end
+					end
 
 			#Parse the Kitchen Sink fixtures from the doc
 			if y["KFK"] #If the current line contains "KFK"
