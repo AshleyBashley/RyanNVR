@@ -44,6 +44,8 @@ def generateObjectFromOrder_NV(pdfName)
    				 #We’re on a color line *AND* it’s an update
 				else
 	     			#We’re on a color line *AND* it’s *NOT* an update
+	     			o[:"ColorCode"] = y.split[5...-2]*" "
+	     			puts y
 				end
 			end
 
@@ -86,6 +88,19 @@ def generateObjectFromOrder_RYAN(pdfName)
 
 			if y["KFL"] #If the current line contains "KFL"
 				o[:KitchenSink] = "11600"
+			end
+			if y["999QK00"]
+			 	#We’re definately in a color line
+				o[:"ColorCode"] = y.split[5...-2]*" "
+				if y["UPDATE"]
+					o[:"UpdatedColor"] = y.split[5...-2]*" "
+			 			#We’re on a color line *AND* it’s an update
+
+				else
+
+ 					#We’re on a color line *AND* it’s *NOT* an update
+ 					o[:"ColorCode"] = y.split[8...-1]*" "
+				end
 			end
 
 			if y["FAUCET FIXTURES KITCHEN"]
