@@ -36,7 +36,7 @@ def generateObjectFromOrder_NV(pdfName)
 				o[:houseTypeCode] = y[y.rindex("(")+1..y.rindex("-")-1]
 			end
 			if y["999QK00"]
-					 #We’re definately in a color line
+					 #We’re definetely in a color line
 				o[:"ColorCode"] = y.split[5...-2]*" "
 
 				if y["UPDATE"]
@@ -48,6 +48,38 @@ def generateObjectFromOrder_NV(pdfName)
 	     			puts y
 				end
 			end
+
+				if y["4CB"] #If the current line contains "4CB"
+					o[:CookTopModel] = "jgp333setss"
+				end
+
+				if y["4CD"] #If the current line contains "4CD"
+					o[:CookTopModel] = "pgp943setss"
+				end
+
+				if y["4CF"] #If the current line contains "4CF"
+					o[:CookTopModel] = "pgp976setss"
+				end
+
+				if y["4CH"] #If the current line contains "4CH"
+					o[:CookTopModel] = "pgp976setss"
+				end
+
+				if y["4CP"] #If the current line contains "4CP"
+					o[:CookTopModel] = "zgu385nsmss"
+				end
+
+				if y["4CQ"] #If the current line contains "4CQ"
+					o[:CookTopModel] = "pgp976ssetss"
+				end
+
+				if y["4CG"] #If the current line contains "4CG"
+					o[:CookTopModel] = "jgp633setss"
+				end
+
+				if y["APPLIANCE PKG FREESTANDING"] #If the current line contains "freestanding"
+					o[:CookTopModel] = "freestanding"
+				end
 
 			#Parse the Kitchen Sink fixtures from the doc
 			if y["KFK"] #If the current line contains "KFK"
@@ -102,6 +134,23 @@ def generateObjectFromOrder_RYAN(pdfName)
  					o[:"ColorCode"] = y.split[8...-1]*" "
 				end
 			end
+
+
+				if y["4CB"] #If the current line contains "4CB"
+					o[:CookTopModel] = "jgp329setss"
+				end
+
+				if y["4CC"] #If the current line contains "4CC"
+					o[:CookTopModel] = "jgp940sekss"
+				end
+
+				if y["4CT"] #If the current line contains "4CT"
+					o[:CookTopModel] = "pgp953setss"
+				end
+
+				if y["APPLIANCE PKG FREESTANDING"] #If the current line contains "freestanding"
+					o[:CookTopModel] = "freestanding"
+				end
 
 			if y["FAUCET FIXTURES KITCHEN"]
 				if y["UPGRADE"]
