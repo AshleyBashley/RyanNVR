@@ -15,6 +15,7 @@ def generateObjectFromOrder_NV(pdfName)
     o[:communityType] = 'NVHomes'
     o[:fileName] = pdfName
     o[:FaucetSpread] = 'faucet centered, soap 8" to R' #Default faucet spread
+    o[:currentChangeOrderdate] = ""
     #o[:FaucetHoles] = 2
 
     blueDiamondCodes = ["11600", "1160W", "11700", "11800", "1180W", "11900", 
@@ -24,6 +25,10 @@ def generateObjectFromOrder_NV(pdfName)
 
     reader.pages.each{|x| #Iterate over each of the pages in the reader
         x.text.split(/\n/).each{|y| #iterate over each line in the page
+
+        	if y["CHANGE ORDER"]
+        		currentChangeOrderdate = y #we'll change this later for dates
+            end
             
             #Parse the start date to determine sink
             if y["Contract Date"] 
@@ -45,7 +50,26 @@ def generateObjectFromOrder_NV(pdfName)
                      o[:"ColorCode"] = y.split[5...-2]*" "
                 end
             end
-             
+
+             	if y["APPLIANCE PKG FREESTANDING"] #If the current line contains "freestanding"
+					o[:CooktopCode] = "freestanding"
+				end
+				if y["4CB"] #If the current line contains "4CB"
+					o[:CooktopCode] = "jgp323setss"
+				end
+				if y["4CF||4CH||4CQ"] #If the current line contains "4CH,4CF,4CQ"
+					o[:CooktopCode] = "pgp976setss"
+				end
+				if y["4CD"] #If the current line contains "4CD"
+					o[:CooktopCode] = "pgp943setss"
+				end
+				if y["4CP"] #If the current line contains "4CP"
+					o[:CooktopCode] = "zgu385nsmss"
+				end
+				if y["4CG"] #If the current line contains "4CG"
+					o[:CooktopCode] = "jgp633setss"
+				end
+
             #Parse the Faucet and Sink fixtures from the doc
             if y["KFK"] then 
                 #KFK Fixture Parsing Here
@@ -129,6 +153,19 @@ def generateObjectFromOrder_RYAN(pdfName)
  					o[:"ColorCode"] = y.split[8...-1]*" "
 				end
 			end
+				if y["APPLIANCE PKG FREESTANDING"] #If the current line contains "freestanding"
+					o[:CooktopCode] = "freestanding"
+				end
+				if y["4CB"] #If the current line contains "4CB"
+					o[:CooktopCode] = "jgp329setss"
+				end
+				if y["4CC||4CF"] #If the current line contains "4CC,4CF"
+					o[:CooktopCode] = "jgp940sekss"
+				end
+				if y["4CT"] #If the current line contains "4CT"
+					o[:CooktopCode] = "pgp953setss"
+				end
+
 
 			if y["FAUCET FIXTURES KITCHEN"]
 				if y["UPGRADE"]
