@@ -11,65 +11,92 @@ require 'ap' #gem install awesome_print
 
 ##This method generates an order object from a NV home PDF.
 def generateObjectFromOrder_NV(pdfName)
-	o={}
-	o[:communityType] = 'NVHomes'
-	o[:fileName] = pdfName
-	o[:FaucetSpread] = 'faucet centered, soap 8" to R' #Default faucet spread
+    o={}
+    o[:communityType] = 'NVHomes'
+    o[:fileName] = pdfName
+    o[:FaucetSpread] = 'faucet centered, soap 8" to R' #Default faucet spread
+    #o[:FaucetHoles] = 2
 
-	blueDiamondCodes = ["11600", "1160W", "11700", "11800", "1180W", "11900", 
-						"1190W", "12000", "1200W", "13000", "14000", "1400W"]
+    blueDiamondCodes = ["11600", "1160W", "11700", "11800", "1180W", "11900", 
+                        "1190W", "12000", "1200W", "13000", "14000", "1400W"]
 
-	reader = PDF::Reader.new(pdfName)
+    reader = PDF::Reader.new(pdfName)
 
-	reader.pages.each{|x| #Iterate over each of the pages in the reader
-		x.text.split(/\n/).each{|y| #iterate over each line in the page
-			
-			#Parse the start date to determine sink
-			if y["Start Date"]
-				o[:orderDate] = Date.strptime(y[y.index("Start Date")+10..-1], '%m/%d/%Y')
-			end
-			if y["Start Dat"] && o[:orderDate].nil?
-				o[:orderDate] = Date.strptime(y[y.index("Start Dat")+9..-1], '%m/%d/%Y')
-			end
+    reader.pages.each{|x| #Iterate over each of the pages in the reader
+        x.text.split(/\n/).each{|y| #iterate over each line in the page
+            
+            #Parse the start date to determine sink
+            if y["Contract Date"] 
+               o[:contractDate] = Date.strptime(y[y.index("Contract Date")+13..-1].split*"", '%m/%d/%Y')
+            end
 
-			if y["Set/"] && o[:houseTypeCode].nil?
-				o[:houseTypeCode] = y[y.rindex("(")+1..y.rindex("-")-1]
-			end
-			if y["999QK00"]
-					 #We’re definately in a color line
-				o[:"ColorCode"] = y.split[5...-2]*" "
+            if y["Set/"] && o[:houseTypeCode].nil?
+                o[:houseTypeCode] = y[y.rindex("(")+1..y.rindex("-")-1]
+            end
+            if y["999QK00"]
+                 #We’re definately in a color line
+                o[:"ColorCode"] = y.split[5...-2]*" "
 
-				if y["UPDATE"]
-					o[:"UpdatedColor"] = y.split[5...-2]*" "
-   				 #We’re on a color line *AND* it’s an update
-				else
-	     			#We’re on a color line *AND* it’s *NOT* an update
-	     			o[:"ColorCode"] = y.split[5...-2]*" "
-	     			puts y
-				end
-			end
-
-			#Parse the Kitchen Sink fixtures from the doc
-			if y["KFK"] #If the current line contains "KFK"
-				o[:KitchenSink] = "11409"
-			end
-			if y["KFL"] then
-				if o[:orderDate] >= Date.strptime('02/14/2017', '%m/%d/%Y') #If the orderDate is after 02/14/2017
-					if blueDiamondCodes.include? o[:houseTypeCode] 
-						o[:KitchenSink] = "AS342"
-					else
-						o[:KitchenSink] = "AS333"
-					end
-				else
-					#Explictly change FaucetSpread on k3821-4 models
-					o[:KitchenSink] = "K3821-4"
-					o[:FaucetSpread] = 'faucet centered, handle to R, soap to R of handle' #Faucet upgrade
-				end
-			end
-		}
-	}
-	return o
+                if y["UPDATE"]
+                    o[:"UpdatedColor"] = y.split[5...-2]*" "
+                    #We’re on a color line *AND* it’s an update
+                else
+                     #We’re on a color line *AND* it’s *NOT* an update
+                     o[:"ColorCode"] = y.split[5...-2]*" "
+                end
+            end
+             
+            #Parse the Faucet and Sink fixtures from the doc
+            if y["KFK"] then 
+                #KFK Fixture Parsing Here
+                if o[:contractDate] < Date.strptime('02/02/2017', '%m/%d/%Y') then
+                    
+                    o[:FaucetSpread] = '8"'
+                    o[:KitchenSink] = '11409'
+                    
+                else
+                    #Contract Date on or after 02/02/2017
+                    
+                    #Default faucet Spread
+                    o[:KitchenSink] = '11409'
+                    
+                end
+            end
+            if y["KFL"] then
+                #KFL Fixture Parsing Here
+                if o[:contractDate] < Date.strptime('02/02/2017', '%m/%d/%Y') then
+                    
+                    o[:FaucetSpread] = 'faucet centered, handle to R, soap to R of handle'
+                    o[:KitchenSink] = 'K3821-4'
+                    
+                elsif o[:contractDate] < Date.strptime('02/14/2017', '%m/%d/%Y') then
+                    #Contract Date between 02/02/2017 and 02/14/2017
+                    
+                    #Default faucet Spread
+                    o[:KitchenSink] = 'K3821-4'
+                    
+                else
+                    if blueDiamondCodes.include? o[:houseTypeCode] then
+                        
+                        #Default faucet Spread
+                        o[:KitchenSink] = 'AS342'
+                        
+                    else
+                        
+                        #Default faucet Spread
+                        o[:KitchenSink] = 'AS333'
+                        
+                    end
+                    
+                end
+            end
+             
+            
+        }
+    }
+    return o
 end
+
 
 ##This method generates an order object from an RYAN home PDF.
 def generateObjectFromOrder_RYAN(pdfName)
