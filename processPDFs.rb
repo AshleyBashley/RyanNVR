@@ -28,6 +28,7 @@ def generateObjectFromOrder_NV(pdfName)
 
         	if y["CHANGE ORDER"]
         		currentChangeOrderdate = y #we'll change this later for dates
+        		puts y 
             end
             
             #Parse the start date to determine sink
@@ -57,7 +58,7 @@ def generateObjectFromOrder_NV(pdfName)
 				if y["4CB"] #If the current line contains "4CB"
 					o[:CooktopCode] = "jgp323setss"
 				end
-				if y["4CF||4CH||4CQ"] #If the current line contains "4CH,4CF,4CQ"
+				if (y["4CF"]||y["4CH"]||y["4CQ"]) #If the current line contains "4CH,4CF,4CQ"
 					o[:CooktopCode] = "pgp976setss"
 				end
 				if y["4CD"] #If the current line contains "4CD"
@@ -69,6 +70,7 @@ def generateObjectFromOrder_NV(pdfName)
 				if y["4CG"] #If the current line contains "4CG"
 					o[:CooktopCode] = "jgp633setss"
 				end
+
 
             #Parse the Faucet and Sink fixtures from the doc
             if y["KFK"] then 
@@ -127,11 +129,18 @@ def generateObjectFromOrder_RYAN(pdfName)
 	o={}
 	o[:communityType] = 'RyanHomes'
 	o[:fileName] = pdfName
+	o[:currentChangeOrderdate] = ""
 
 	reader = PDF::Reader.new(pdfName)
 
 	reader.pages.each{|x| #Iterate over each of the pages in the reader
 		x.text.split(/\n/).each{|y| #iterate over each line in the page
+
+
+			if y["CHANGE ORDER"]
+        		currentChangeOrderdate = y #we'll change this later for dates
+        		puts y
+            end
 
 			if y["KFK"] #If the current line contains "KFK"
 				o[:KitchenSink] = "11444"
@@ -159,7 +168,7 @@ def generateObjectFromOrder_RYAN(pdfName)
 				if y["4CB"] #If the current line contains "4CB"
 					o[:CooktopCode] = "jgp329setss"
 				end
-				if y["4CC||4CF"] #If the current line contains "4CC,4CF"
+				if (y["4CC"]|| y["4CF"]) #If the current line contains "4CC,4CF"
 					o[:CooktopCode] = "jgp940sekss"
 				end
 				if y["4CT"] #If the current line contains "4CT"
