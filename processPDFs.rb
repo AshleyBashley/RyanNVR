@@ -28,7 +28,7 @@ def generateObjectFromOrder_NV(pdfName)
 
         	if y["CHANGE ORDER"]
         		currentChangeOrderdate = y #we'll change this later for dates
-        		puts y 
+        		# puts o[:fileName] + " : " + y 
             end
             
             #Parse the start date to determine sink
@@ -129,39 +129,43 @@ def generateObjectFromOrder_RYAN(pdfName)
 	o={}
 	o[:communityType] = 'RyanHomes'
 	o[:fileName] = pdfName
-	o[:currentChangeOrderdate] = ""
+	o[:changeOrders] = []
+	currentChangeOrderDate = nil
+	currentChangeOrderNumber = nil
+	tmpChangeOrderObj = nil	
 
 	reader = PDF::Reader.new(pdfName)
 
 	reader.pages.each{|x| #Iterate over each of the pages in the reader
 		x.text.split(/\n/).each{|y| #iterate over each line in the page
 
-
 			if y["CHANGE ORDER"]
-        		currentChangeOrderdate = y #we'll change this later for dates
-        		puts y
-            end
-
-			if y["KFK"] #If the current line contains "KFK"
-				o[:KitchenSink] = "11444"
-			end
-
-			if y["KFL"] #If the current line contains "KFL"
-				o[:KitchenSink] = "11600"
-			end
-			if y["999QK00"]
-			 	#We’re definately in a color line
-				o[:"ColorCode"] = y.split[5...-2]*" "
-				if y["UPDATE"]
-					o[:"UpdatedColor"] = y.split[5...-2]*" "
-			 			#We’re on a color line *AND* it’s an update
-
-				else
-
- 					#We’re on a color line *AND* it’s *NOT* an update
- 					o[:"ColorCode"] = y.split[8...-1]*" "
+				if tmpChangeOrderObj.nil? == false && tmpChangeOrderObj.keys.count > 2
+					o[:changeOrders] << tmpChangeOrderObj
 				end
-			end
+
+        		currentChangeOrderDate = y.split("|")[1] #we'll change this later for dates
+				currentChangeOrderDate = Date.strptime(currentChangeOrderDate[currentChangeOrderDate.index("Date:")+5...-1].strip,'%m/%d/%Y')
+
+        		currentChangeOrderNumber = y.split("|")[0]
+				tmpChangeOrderObj = {}	
+		    	tmpChangeOrderObj[:ChangeOrderNumber] = currentChangeOrderNumber
+		    	tmpChangeOrderObj[:ChangeOrderDate] = currentChangeOrderDate
+		    end
+
+		    if currentChangeOrderDate.nil? then
+		    	if y["KFK"] #If the current line contains "KFK"
+					o[:KitchenSink] = "11444"
+				end
+
+				if y["KFL"] #If the current line contains "KFL"
+					o[:KitchenSink] = "11600"
+				end
+				if y["999QK00"]
+				 	#We’re definately in a color line
+					o[:"ColorCode"] = y.split[8..-1]*" "
+				end
+
 				if y["APPLIANCE PKG FREESTANDING"] #If the current line contains "freestanding"
 					o[:CooktopCode] = "freestanding"
 				end
@@ -176,17 +180,29 @@ def generateObjectFromOrder_RYAN(pdfName)
 				end
 
 
-			if y["FAUCET FIXTURES KITCHEN"]
-				if y["UPGRADE"]
-					#Faucet Fixtures Kitchen AND Upgrade
-					o[:FaucetSpread] = 'faucet centered, handle 4" to R, soap 4" to R of handle' #faucet upgrade
-				else
-					#Faucet Fixtures Kitchen AND NOT Upgrade
-					o[:FaucetSpread] = 'centered' #faucet standard
+				if y["FAUCET FIXTURES KITCHEN"]
+					if y["UPGRADE"]
+						#Faucet Fixtures Kitchen AND Upgrade
+						o[:FaucetSpread] = 'faucet centered, handle 4" to R, soap 4" to R of handle' #faucet upgrade
+					else
+						#Faucet Fixtures Kitchen AND NOT Upgrade
+						o[:FaucetSpread] = 'centered' #faucet standard
+					end
 				end
-			end
-		}
-	}
+		    else
+		    	#we're in change orders
+		    	if y["999QK00"]	
+					tmpChangeOrderObj[:"ColorCode"] = y.split[5...-2]*" "
+				end
+
+				if y["APPLIANCE PKG FREESTANDING"] 
+					tmpChangeOrderObj[:CooktopCode] = "freestanding"
+				end
+		    end
+			
+
+		}#x.text.split.each
+	}#reader.pages.each
 	return o
 end	
 
