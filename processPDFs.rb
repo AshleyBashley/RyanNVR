@@ -15,8 +15,10 @@ def generateObjectFromOrder_NV(pdfName)
     o[:communityType] = 'NVHomes'
     o[:fileName] = pdfName
     o[:FaucetSpread] = 'faucet centered, soap 8" to R' #Default faucet spread
-    o[:currentChangeOrderdate] = ""
-    #o[:FaucetHoles] = 2
+    o[:changeOrders] = []
+	currentChangeOrderDate = nil
+	currentChangeOrderNumber = nil
+	tmpChangeOrderObj = nil	
 
     blueDiamondCodes = ["11600", "1160W", "11700", "11800", "1180W", "11900", 
                         "1190W", "12000", "1200W", "13000", "14000", "1400W"]
@@ -27,10 +29,19 @@ def generateObjectFromOrder_NV(pdfName)
         x.text.split(/\n/).each{|y| #iterate over each line in the page
 
         	if y["CHANGE ORDER"]
-        		currentChangeOrderdate = y #we'll change this later for dates
-        		# puts o[:fileName] + " : " + y 
-            end
-            
+				if tmpChangeOrderObj.nil? == false && tmpChangeOrderObj.keys.count > 2
+					o[:changeOrders] << tmpChangeOrderObj
+				end
+
+        		currentChangeOrderDate = y.split("|")[1] #we'll change this later for dates
+				currentChangeOrderDate = Date.strptime(currentChangeOrderDate[currentChangeOrderDate.index("Date:")+5...-1].strip,'%m/%d/%Y')
+
+        		currentChangeOrderNumber = y.split("|")[0]
+				tmpChangeOrderObj = {}	
+		    	tmpChangeOrderObj[:ChangeOrderNumber] = currentChangeOrderNumber
+		    	tmpChangeOrderObj[:ChangeOrderDate] = currentChangeOrderDate
+		    end
+
             #Parse the start date to determine sink
             if y["Contract Date"] 
                o[:contractDate] = Date.strptime(y[y.index("Contract Date")+13..-1].split*"", '%m/%d/%Y')
