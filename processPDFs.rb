@@ -73,7 +73,7 @@ def generateObjectFromOrder_NV(pdfName)
                 if y["4CB"] #If the current line contains "4CB"
                     o[:CooktopCode] = "jgp323setss"
                 end
-                if (y["4CF"]||y["4CH"]||y["4CQ"]) #If the current line contains "4CH,4CF,4CQ"
+                if (y["4CF"]||y["4CH"]||y["4CQ"]) #If the current line contains "4CF,4CH,4CQ"
                     o[:CooktopCode] = "pgp976setss"
                 end
                 if y["4CD"] #If the current line contains "4CD"
@@ -101,7 +101,6 @@ def generateObjectFromOrder_NV(pdfName)
                 #we're in change orders
                 if y["999QK00"]    
                     tmpChangeOrderObj[:ColorCode] = y.split[5..-3]*" "
-                    puts y
                 end
 
                 if y["APPLIANCE PKG FREESTANDING"] 
@@ -123,26 +122,18 @@ def generateObjectFromOrder_NV(pdfName)
                     tmpChangeOrderObj[:CooktopCode] = "jgp633setss"
                 end
                 if y["KFK"]
-                    tmpChangeOrderObj[:KitchenSink] = "11444"
+                    tmpChangeOrderObj[:KitchenSink] = "11409"
                 end
                 if y["KFL"]
-                    tmpChangeOrderObj[:KitchenSink] = "11600"
-                end
-                if y["9FD"]
-                    tmpChangeOrderObj[:FaucetSpread] = "standard"
-                end
-                if y["9FE"]
-                    tmpChangeOrderObj[:FaucetSpread] = "upgrade"
+                    tmpChangeOrderObj[:KitchenSink] = "k3821-4"
                 end
                 
                 if y["KFK"] then 
                     faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(o[:contractDate], "KFK", o[:houseTypeCode])
-                    tmpChangeOrderObj[:FaucetSpread] = faucetAndSink[:FaucetSpread]
                     tmpChangeOrderObj[:KitchenSink] = faucetAndSink[:KitchenSink]
                 end
                 if y["KFL"] then
                     faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(o[:contractDate], "KFL", o[:houseTypeCode])
-                    tmpChangeOrderObj[:FaucetSpread] = faucetAndSink[:FaucetSpread]
                     tmpChangeOrderObj[:KitchenSink] = faucetAndSink[:KitchenSink]             
                 end
             end    
@@ -321,7 +312,7 @@ def main
      Dir['PDFs_RYAN/*.pdf'].each{|x|
 
          #Generate the parsed order from the PDF and push it onto parsedOrders array.
-         #parsedOrders << generateObjectFromOrder_RYAN(x)
+         parsedOrders << generateObjectFromOrder_RYAN(x)
      }
 
     # Parse all NV pdfs
