@@ -20,9 +20,6 @@ def generateObjectFromOrder_NV(pdfName)
     currentChangeOrderNumber = nil
     tmpChangeOrderObj = nil    
 
-    blueDiamondCodes = ["11600", "1160W", "11700", "11800", "1180W", "11900", 
-                        "1190W", "12000", "1200W", "13000", "14000", "1400W"]
-
     reader = PDF::Reader.new(pdfName)
 
     reader.pages.each{|x| #Iterate over each of the pages in the reader
@@ -92,8 +89,8 @@ def generateObjectFromOrder_NV(pdfName)
                     o[:FaucetSpread] = faucetAndSink[:FaucetSpread]
                     o[:KitchenSink] = faucetAndSink[:KitchenSink]
                 end
-                if y["KFL"] then
-                    faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(o[:contractDate], "KFL", o[:houseTypeCode])
+                if (y["KFL"]|| y["KFM"]) then
+                    faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(o[:contractDate], "KFL", "KFM", o[:houseTypeCode])
                     o[:FaucetSpread] = faucetAndSink[:FaucetSpread]
                     o[:KitchenSink] = faucetAndSink[:KitchenSink]             
                 end
@@ -124,7 +121,7 @@ def generateObjectFromOrder_NV(pdfName)
                 if y["KFK"]
                     tmpChangeOrderObj[:KitchenSink] = "11409"
                 end
-                if y["KFL"]
+                if (y["KFL"]|| y["KFM"])
                     tmpChangeOrderObj[:KitchenSink] = "k3821-4"
                 end
                 
@@ -132,8 +129,8 @@ def generateObjectFromOrder_NV(pdfName)
                     faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(o[:contractDate], "KFK", o[:houseTypeCode])
                     tmpChangeOrderObj[:KitchenSink] = faucetAndSink[:KitchenSink]
                 end
-                if y["KFL"] then
-                    faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(o[:contractDate], "KFL", o[:houseTypeCode])
+                if (y["KFL"]|| y["KFM"]) then
+                    faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(o[:contractDate], "KFL", "KFM", o[:houseTypeCode])
                     tmpChangeOrderObj[:KitchenSink] = faucetAndSink[:KitchenSink]             
                 end
             end    
@@ -144,6 +141,10 @@ def generateObjectFromOrder_NV(pdfName)
 end
 
 def determineFaucetSpreadAndKitchenSink_NV(contractDate, sinkModel, houseTypeCode)
+
+ 	blueDiamondCodes = ["11600", "1160W", "11700", "11800", "1180W", "11900", 
+                        "1190W", "12000", "1200W", "13000", "14000", "1400W"]
+
     defaultFaucetSpread = 'faucet centered, soap 8" to R' 
     
     if sinkModel == "KFK" then 
@@ -162,7 +163,7 @@ def determineFaucetSpreadAndKitchenSink_NV(contractDate, sinkModel, houseTypeCod
                 }
         end
     end
-    if sinkModel == "KFL" then
+    if sinkModel == "KFL"; "KFM" , then
         #KFL Fixture Parsing Here
         if contractDate < Date.strptime('02/02/2017', '%m/%d/%Y') then
             return {
