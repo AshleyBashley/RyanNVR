@@ -45,8 +45,12 @@ def generateObjectFromOrder_NV(pdfName)
             if currentChangeOrderDate.nil? then
                 #if currentChangeOrderDate.nil? then
                 #Parse the start date to determine sink
-                if y["Contract Date"] 
+
+                begin
+                	y["Contract Date"] 
                    o[:contractDate] = Date.strptime(y[y.index("Contract Date")+13..-1].split*"", '%m/%d/%Y')
+                rescue
+                 	contractDate = "FAILED TO PARSE DATE"
                 end
 
                 if y["Set/"] && o[:houseTypeCode].nil?
@@ -90,7 +94,7 @@ def generateObjectFromOrder_NV(pdfName)
                     o[:KitchenSink] = faucetAndSink[:KitchenSink]
                 end
                 if (y["KFL"]|| y["KFM"]) then
-                    faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(o[:contractDate], "KFL", "KFM", o[:houseTypeCode])
+                    faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(o[:contractDate], "KFL", o[:houseTypeCode])
                     o[:FaucetSpread] = faucetAndSink[:FaucetSpread]
                     o[:KitchenSink] = faucetAndSink[:KitchenSink]             
                 end
@@ -130,7 +134,7 @@ def generateObjectFromOrder_NV(pdfName)
                     tmpChangeOrderObj[:KitchenSink] = faucetAndSink[:KitchenSink]
                 end
                 if (y["KFL"]|| y["KFM"]) then
-                    faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(o[:contractDate], "KFL", "KFM", o[:houseTypeCode])
+                    faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(o[:contractDate], "KFL", o[:houseTypeCode])
                     tmpChangeOrderObj[:KitchenSink] = faucetAndSink[:KitchenSink]             
                 end
             end    
@@ -163,7 +167,7 @@ def determineFaucetSpreadAndKitchenSink_NV(contractDate, sinkModel, houseTypeCod
                 }
         end
     end
-    if sinkModel == "KFL"; "KFM" , then
+    if sinkModel == "KFL" || sinkModel == "KFM" then
         #KFL Fixture Parsing Here
         if contractDate < Date.strptime('02/02/2017', '%m/%d/%Y') then
             return {
