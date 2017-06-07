@@ -1,141 +1,111 @@
-require 'pdf-reader' # gem install pdf-reader
 require 'date'
-#nonfunctional
-require 'ap' #gem install awesome_print
-
+require_relative 'processorCommon'
 ##This method generates an order object from a NV home PDF.
 def generateObjectFromOrder_NV(pdfName)
-    o={}
-    o[:communityType] = 'NVHomes'
-    o[:fileName] = pdfName
-    o[:FaucetSpread] = 'faucet centered, soap 8" to R' #Default faucet spread
-    o[:changeOrders] = []
-    currentChangeOrderDate = nil
-    currentChangeOrderNumber = nil
-    tmpChangeOrderObj = nil    
+    nvOrderLambda = -> (line, orderObj) {
+        begin
+            line["Contract Date"] 
+            orderObj[:contractDate] = Date.strptime(line[line.index("Contract Date")+13..-1].split*"", '%m/%d/%Y')
+        rescue
+            contractDate = "FAILED TO PARSE DATE"
+        end
 
-    reader = PDF::Reader.new(pdfName)
-
-    reader.pages.each{|x| #Iterate over each of the pages in the reader
-        x.text.split(/\n/).each{|y| #iterate over each line in the page
-
-            if y["CHANGE ORDER"] && y["Date:"] #Does "CHANGE ORDER" occur in the string y
-                if tmpChangeOrderObj.nil? == false && tmpChangeOrderObj.keys.count > 2
-                    o[:changeOrders] << tmpChangeOrderObj
-                end
-
-                currentChangeOrderDate = y.split("|")[1] #we'll change this later for dates
-                begin
-                    currentChangeOrderDate = Date.strptime(currentChangeOrderDate[currentChangeOrderDate.index("Date:")+5...-1].strip,'%m/%d/%Y')
-                rescue
-                    currentChangeOrderDate = "FAILED TO PARSE DATE"
-                end
-
-                currentChangeOrderNumber = y.split("|")[0]
-                tmpChangeOrderObj = {}    
-                tmpChangeOrderObj[:ChangeOrderNumber] = currentChangeOrderNumber
-                tmpChangeOrderObj[:ChangeOrderDate] = currentChangeOrderDate
-            end
-            if currentChangeOrderDate.nil? then
-                #if currentChangeOrderDate.nil? then
-                #Parse the start date to determine sink
-
-                begin
-                	y["Contract Date"] 
-                   o[:contractDate] = Date.strptime(y[y.index("Contract Date")+13..-1].split*"", '%m/%d/%Y')
-                rescue
-                 	contractDate = "FAILED TO PARSE DATE"
-                end
-
-                if y["Set/"] && o[:houseTypeCode].nil?
-                    o[:houseTypeCode] = y[y.rindex("(")+1..y.rindex("-")-1]
-                end
-                if y["999QK00"]
-                     #We’re definately in a color line
-                    o[:"ColorCode"] = y.split[8..-1]*" "
-                    if y["UPDATE"]
-                        o[:"UpdatedColor"] = y.split[8..-1]*" "
-                        #We’re on a color line *AND* it’s an update
-                    else
-                         #We’re on a color line *AND* it’s *NOT* an update
-                         o[:"ColorCode"] = y.split[8..-1]*" "
-                    end
-                end
-
-                if y["APPLIANCE PKG FREESTANDING"] #If the current line contains "freestanding"
-                    o[:CooktopCode] = "freestanding"
-                end
-                if y["4CB"] #If the current line contains "4CB"
-                    o[:CooktopCode] = "jgp323setss"
-                end
-                if (y["4CF"]||y["4CH"]||y["4CQ"]) #If the current line contains "4CF,4CH,4CQ"
-                    o[:CooktopCode] = "pgp976setss"
-                end
-                if y["4CD"] #If the current line contains "4CD"
-                    o[:CooktopCode] = "pgp943setss"
-                end
-                if y["4CP"] #If the current line contains "4CP"
-                    o[:CooktopCode] = "zgu385nsmss"
-                end
-                if y["4CG"] #If the current line contains "4CG"
-                    o[:CooktopCode] = "jgp633setss"
-                end
-
-                #Parse the Faucet and Sink fixtures from the doc
-                if y["KFK"] then 
-                    faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(o[:contractDate], "KFK", o[:houseTypeCode])
-                    o[:FaucetSpread] = faucetAndSink[:FaucetSpread]
-                    o[:KitchenSink] = faucetAndSink[:KitchenSink]
-                end
-                if (y["KFL"]|| y["KFM"]) then
-                    faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(o[:contractDate], "KFL", o[:houseTypeCode])
-                    o[:FaucetSpread] = faucetAndSink[:FaucetSpread]
-                    o[:KitchenSink] = faucetAndSink[:KitchenSink]             
-                end
+        if line["Set/"] && orderObj[:houseTypeCode].nil?
+            orderObj[:houseTypeCode] = line[line.rindex("(")+1..line.rindex("-")-1]
+        end
+        if line["999QK00"]
+             #We’re definately in a color line
+            orderObj[:"ColorCode"] = line.split[8..-1]*" "
+            if line["UPDATE"]
+                orderObj[:"UpdatedColor"] = line.split[8..-1]*" "
+                #We’re on a color line *AND* it’s an update
             else
-                #we're in change orders
-                if y["999QK00"]    
-                    tmpChangeOrderObj[:ColorCode] = y.split[5..-3]*" "
-                end
+                 #We’re on a color line *AND* it’s *NOT* an update
+                 orderObj[:"ColorCode"] = line.split[8..-1]*" "
+            end
+        end
 
-                if y["APPLIANCE PKG FREESTANDING"] 
-                    tmpChangeOrderObj[:CooktopCode] = "freestanding"
-                end
-                if (y["4CF"]||y["4CH"]||y["4CQ"])
-                    tmpChangeOrderObj[:CooktopCode] = "pgp976setss"
-                end
-                if y["4CB"]
-                    tmpChangeOrderObj[:CooktopCode] = "jgp333setss"
-                end
-                if y["4CD"] #If the current line contains "4CD"
-                    tmpChangeOrderObj[:CooktopCode] = "pgp943setss"
-                end
-                if y["4CP"] #If the current line contains "4CP"
-                    tmpChangeOrderObj[:CooktopCode] = "zgu385nsmss"
-                end
-                if y["4CG"] #If the current line contains "4CG"
-                    tmpChangeOrderObj[:CooktopCode] = "jgp633setss"
-                end
-                if y["KFK"]
-                    tmpChangeOrderObj[:KitchenSink] = "11409"
-                end
-                if (y["KFL"]|| y["KFM"])
-                    tmpChangeOrderObj[:KitchenSink] = "k3821-4"
-                end
-                
-                if y["KFK"] then 
-                    faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(o[:contractDate], "KFK", o[:houseTypeCode])
-                    tmpChangeOrderObj[:KitchenSink] = faucetAndSink[:KitchenSink]
-                end
-                if (y["KFL"]|| y["KFM"]) then
-                    faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(o[:contractDate], "KFL", o[:houseTypeCode])
-                    tmpChangeOrderObj[:KitchenSink] = faucetAndSink[:KitchenSink]             
-                end
-            end    
-            
-        }
+        if line["APPLIANCE PKG FREESTANDING"] #If the current line contains "freestanding"
+            orderObj[:CooktopCode] = "freestanding"
+        end
+        if line["4CB"] #If the current line contains "4CB"
+            orderObj[:CooktopCode] = "jgp323setss"
+        end
+        if (line["4CF"]||line["4CH"]||line["4CQ"]) #If the current line contains "4CF,4CH,4CQ"
+            orderObj[:CooktopCode] = "pgp976setss"
+        end
+        if line["4CD"] #If the current line contains "4CD"
+            orderObj[:CooktopCode] = "pgp943setss"
+        end
+        if line["4CP"] #If the current line contains "4CP"
+            orderObj[:CooktopCode] = "zgu385nsmss"
+        end
+        if line["4CG"] #If the current line contains "4CG"
+            orderObj[:CooktopCode] = "jgp633setss"
+        end
+
+        #Parse the Faucet and Sink fixtures from the doc
+        if line["KFK"] then 
+            faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(orderObj[:contractDate], "KFK", orderObj[:houseTypeCode])
+            orderObj[:FaucetSpread] = faucetAndSink[:FaucetSpread]
+            orderObj[:KitchenSink] = faucetAndSink[:KitchenSink]
+        end
+        if (line["KFL"]|| line["KFM"]) then
+            faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(orderObj[:contractDate], "KFL", orderObj[:houseTypeCode])
+            orderObj[:FaucetSpread] = faucetAndSink[:FaucetSpread]
+            orderObj[:KitchenSink] = faucetAndSink[:KitchenSink]             
+        end
     }
-    return o
+
+
+    nvChangeOrderLambda = -> (line, orderObj, changedObject) {
+        if line["ADD"] then
+            changedObject[:Change] = "ADD"
+        elsif line["DELETE"] then
+            changedObject[:Change] = "DELETE"
+        elsif line["UPDATE"]
+            changedObject[:Change] = "UPDATE"
+        end
+        #we're in change orders
+        if line["999QK00"]    
+            changedObject[:ColorCode] = line.split[5..-3]*" "
+        end
+        if line["APPLIANCE PKG FREESTANDING"] 
+            changedObject[:CooktopCode] = "freestanding"
+        end
+        if (line["4CF"]||line["4CH"]||line["4CQ"])
+            changedObject[:CooktopCode] = "pgp976setss"
+        end
+        if line["4CB"]
+            changedObject[:CooktopCode] = "jgp333setss"
+        end
+        if line["4CD"] #If the current line contains "4CD"
+            changedObject[:CooktopCode] = "pgp943setss"
+        end
+        if line["4CP"] #If the current line contains "4CP"
+            changedObject[:CooktopCode] = "zgu385nsmss"
+        end
+        if line["4CG"] #If the current line contains "4CG"
+            changedObject[:CooktopCode] = "jgp633setss"
+        end
+        if line["KFK"]
+            changedObject[:KitchenSink] = "11409"
+        end
+        if (line["KFL"]|| line["KFM"])
+            changedObject[:KitchenSink] = "k3821-4"
+        end
+        
+        if line["KFK"] then 
+            faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(orderObj[:contractDate], "KFK", orderObj[:houseTypeCode])
+            changedObject[:KitchenSink] = faucetAndSink[:KitchenSink]
+        end
+        if (line["KFL"]|| line["KFM"]) then
+            faucetAndSink = determineFaucetSpreadAndKitchenSink_NV(orderObj[:contractDate], "KFL", orderObj[:houseTypeCode])
+            changedObject[:KitchenSink] = faucetAndSink[:KitchenSink]             
+        end
+    }
+
+    generateCommonObjectFromOrder(pdfName, 'NV Homes', nvOrderLambda, nvChangeOrderLambda)
 end
 
 def determineFaucetSpreadAndKitchenSink_NV(contractDate, sinkModel, houseTypeCode)
